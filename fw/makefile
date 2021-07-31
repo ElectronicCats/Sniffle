@@ -6,6 +6,7 @@ XDCPATH = $(SIMPLELINK_SDK_INSTALL_DIR)/source;$(SIMPLELINK_SDK_INSTALL_DIR)/ker
 
 CC = "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-gcc"
 LNK = "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-gcc"
+HEX = "$(CCS_ARMCOMPILER)/bin/armobjcopy"
 
 CONFIGPKG = rtos_build
 NAME = sniffle
@@ -108,7 +109,7 @@ OBJECTS = $(patsubst %.c,%.obj,$(SOURCES))
 
 .PRECIOUS: $(CONFIGPKG)/compiler.opt $(CONFIGPKG)/linker.cmd
 
-all: $(NAME).out
+all: $(NAME).hex
 
 $(CONFIGPKG)/compiler.opt: $(CONFIGPKG)/linker.cmd
 
@@ -132,6 +133,10 @@ $(NAME).out: $(OBJECTS) $(CONFIGPKG)/linker.cmd
 	@ echo linking...
 	@ $(LNK)  $(OBJECTS) $(LFLAGS) -o $(NAME).out
 
+$(NAME).hex: $(NAME).out
+	@ echo building $@
+	@ $(HEX) -O ihex  $? $@
+
 .PHONY: load clean clean2
 
 clean: clean2
@@ -143,6 +148,7 @@ clean2:
 	@ $(RM) $(OBJECTS) > $(DEVNULL) 2>&1
 	@ $(RM) $(NAME).out > $(DEVNULL) 2>&1
 	@ $(RM) $(NAME).map > $(DEVNULL) 2>&1
+	@ $(RM) $(NAME).hex > $(DEVNULL) 2>&1
 	@ $(RM) ti_radio_config.c ti_drivers_config.c ti_devices_config.c ti_radio_config.h ti_drivers_config.h syscfg_c.rov.xs ti_utils_build_linker.cmd.exp ti_utils_build_linker.cmd.genlibs ti_utils_runtime_Makefile ti_utils_runtime_model.gv > $(DEVNULL) 2>&1
 
 load: $(NAME).out
