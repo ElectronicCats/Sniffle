@@ -6,7 +6,7 @@ XDCPATH = $(SIMPLELINK_SDK_INSTALL_DIR)/source;$(SIMPLELINK_SDK_INSTALL_DIR)/ker
 
 CC = "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-gcc"
 LNK = "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-gcc"
-HEX = "$(CCS_ARMCOMPILER)/bin/armobjcopy"
+HEX = "$(GCC_ARMCOMPILER)/bin/arm-none-eabi-objcopy"
 
 CONFIGPKG = rtos_build
 NAME = sniffle
@@ -135,7 +135,7 @@ $(NAME).out: $(OBJECTS) $(CONFIGPKG)/linker.cmd
 
 $(NAME).hex: $(NAME).out
 	@ echo building $@
-	@ $(HEX) -O ihex  $? $@
+	@ $(HEX) -O ihex --remove-section .vtable --remove-section .dmaSpi0RxControlTableEntry --remove-section .dmaSpi0TxControlTableEntry --remove-section .dmaSpi1RxControlTableEntry --remove-section .dmaSpi1TxControlTableEntry --remove-section .dmaSpi0RxAltControlTableEntry --remove-section .dmaSpi0TxAltControlTableEntry --remove-section .dmaSpi1RxAltControlTableEntry --remove-section .dmaSpi1TxAltControlTableEntry --gap-fill 0xff $? $@
 
 .PHONY: load clean clean2
 
