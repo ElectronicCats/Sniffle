@@ -135,7 +135,7 @@ $(NAME).out: $(OBJECTS) $(CONFIGPKG)/linker.cmd
 
 $(NAME).hex: $(NAME).out
 	@ echo building $@
-	@ $(HEX) -O ihex --remove-section .vtable --remove-section .dmaSpi0RxControlTableEntry --remove-section .dmaSpi0TxControlTableEntry --remove-section .dmaSpi1RxControlTableEntry --remove-section .dmaSpi1TxControlTableEntry --remove-section .dmaSpi0RxAltControlTableEntry --remove-section .dmaSpi0TxAltControlTableEntry --remove-section .dmaSpi1RxAltControlTableEntry --remove-section .dmaSpi1TxAltControlTableEntry --gap-fill 0xff $? $@
+	@ $(HEX) -O ihex -S $? $@
 
 .PHONY: load clean clean2
 
