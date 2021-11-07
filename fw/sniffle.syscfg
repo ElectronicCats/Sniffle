@@ -70,9 +70,9 @@ if (system.deviceData.deviceId.startsWith("CC1352P")) {
 var GPIO = scripting.addModule("/ti/drivers/GPIO");  // Add a GPIO module for use by LEDs
 var LED_R = GPIO.addInstance();                      // Add an a GPIO module instance for LED_R
 
-LED_R.mode              = "Output";
 LED_R.$name = "CONFIG_GPIO_RLED";                     // Descriptive name for the LED_R GPIO
-LED_R.gpioPin.$assign   = "boosterpack.6";
+LED_R.mode              = "Output";
+LED_R.gpioPin.$assign   = "DIO_24";
 LED_R.pinInstance.$name = "CONFIG_PIN_RLED";          // Descriptive name for LED_R PIN
 
 /* ======== UART ======== */
