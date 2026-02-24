@@ -1434,6 +1434,74 @@ void initiateConn(bool isRandom, void *_peerAddr, void *llData)
     TXQueue_init();
 }
 
+/* Mode 0: DATA -> CENTRAL live hijack.
+ * Call only when in DATA state. All connection parameters (accessAddress,
+ * crcInit, rconf, nextHopTime, connEventCount, use_csa2) are already set
+ * from passively following the connection. We just need to reset TX state
+ * and tip the state machine to CENTRAL.
+ */
+void enterCentralFromData(void)
+{
+    RadioWrapper_resetSeqStat();
+    stateTransition(CENTRAL);
+    RadioWrapper_stop();
+    TXQueue_init();
+}
+
+/* Mode 1: Enter CENTRAL with explicit connection parameters.
+ * Used when connection parameters are provided from a separately sniffed
+ * CONNECT_IND (e.g. different device or past session).
+ * anchorTicks: radio clock value (RF_getCurrentTime() scale) for the
+ * most recently known anchor point of the connection.
+ */
+void enterCentralDirect(PHY_Mode phy, bool csa2, uint8_t *llData,
+        uint32_t connEvent, uint32_t anchorTicks)
+{
+    /* Extract connection parameters from llData (CONNECT_IND LLData field)
+     * Byte offsets verified against handleConnReq():
+     *   0-3:  Access Address
+     *   4-6:  CRC Init (24-bit)
+     *   8-9:  WinOffset (unused here -- we use anchorTicks directly)
+     *  10-11: Interval (1.25ms units)
+     *  12-13: Latency
+     *  14-15: Timeout (10ms units)
+     *  16-20: Channel Map (5 bytes)
+     *     21: Hop Increment (lower 5 bits) / SCA (upper 3 bits)
+     */
+    accessAddress = *(uint32_t *)llData;
+    hopIncrement = llData[21] & 0x1F;
+    crcInit = (*(uint32_t *)(llData + 4)) & 0xFFFFFF;
+    ll_encryption = false;
+    use_csa2 = csa2;
+    curUnmapped = (uint8_t)(((uint32_t)hopIncrement * (connEvent + 1)) % 37);
+
+    rconf.chanMap = 0;
+    memcpy(&rconf.chanMap, llData + 16, 5);
+    rconf.chanMapCertain = true;
+    computeMaps();
+
+    uint16_t Interval = *(uint16_t *)(llData + 10);
+    rconf.hopIntervalTicks = Interval * 5000;
+    rconf.intervalCertain = true;
+    rconf.winOffsetCertain = true;
+    rconf.phy = phy;
+    rconf.peripheralLatency = *(uint16_t *)(llData + 12);
+    rconf.connTimeoutTicks = *(uint16_t *)(llData + 14) * 40000;
+
+    connEventCount = connEvent;
+    nextHopTime = anchorTicks + rconf.hopIntervalTicks - AO_TARG;
+    connTimeoutTime = RF_getCurrentTime() + rconf.connTimeoutTicks;
+
+    preloadedParamIndex = 0;
+    numParamPairs = 0;
+    rconf_reset();
+
+    RadioWrapper_resetSeqStat();
+    stateTransition(CENTRAL);
+    RadioWrapper_stop();
+    TXQueue_init();
+}
+
 /* Enter legacy advertising state */
 void advertise(ADV_Mode mode, void *advData, uint8_t advLen,
         void *scanRspData, uint8_t scanRspLen)

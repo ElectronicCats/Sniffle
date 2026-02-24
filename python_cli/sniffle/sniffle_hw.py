@@ -314,6 +314,36 @@ class SniffleHW:
             raise ValueError("TX power out of bounds")
         self._send_cmd([0x27, power & 0xFF])
 
+    def cmd_hijack_live(self):
+        """Hijack: transition from DATA state to CENTRAL (mode 0).
+
+        CatSniffer must already be in DATA state following a connection.
+        No parameters required -- all connection state is already synchronized.
+        After this call, listen for a StateMessage confirming CENTRAL state.
+        """
+        self._send_cmd([0x28, 0x00])
+
+    def cmd_hijack_direct(self, phy, csa2, llData, connEvent, anchorTicks):
+        """Hijack: enter CENTRAL with explicit connection parameters (mode 1).
+
+        Args:
+            phy:         PhyMode enum value (PHY_1M=0, PHY_2M=1, etc.)
+            csa2:        True if the connection uses CSA#2 channel selection
+            llData:      22-byte LLData field from the CONNECT_IND PDU
+            connEvent:   Current connection event counter (uint32)
+            anchorTicks: Radio clock value of the most recent anchor point (uint32)
+        """
+        if len(llData) != 22:
+            raise ValueError("llData must be exactly 22 bytes")
+        self._send_cmd([
+            0x28, 0x01,
+            int(phy),
+            1 if csa2 else 0,
+            *llData,
+            *pack('<L', connEvent),
+            *pack('<L', anchorTicks),
+        ])
+
     def _recv_msg(self, desync=False):
         got_msg = False
         while not (got_msg or self.recv_cancelled):
