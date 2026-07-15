@@ -39,11 +39,16 @@ class TrivialLogger:
     exception = _log
 
 def find_catsniffer_v3_serport():
-    catsniffer_ports = [i[0] for i in comports() if (i.vid == 11914 and i.pid == 192 and i.manufacturer.lower() == "arduino")]
-    if len(catsniffer_ports) > 0:
-        return catsniffer_ports[0]
-    else:
-        return None
+    # Electronic Cats CatSniffer (RP2040 composite USB): vid 0x1209, product
+    # "Catsniffer". It exposes several CDC interfaces; the lowest-numbered one is
+    # the CC1352 passthrough that Sniffle talks to.
+    ports = [i.device for i in comports()
+             if i.product and "catsniffer" in i.product.lower()]
+    # Legacy Arduino-based CatSniffer variant (vid 0x2E8A / pid 0xC0).
+    ports += [i.device for i in comports()
+              if i.vid == 11914 and i.pid == 192
+              and i.manufacturer and i.manufacturer.lower() == "arduino"]
+    return sorted(set(ports))[0] if ports else None
 
 def find_xds110_serport():
     xds_ports = [i[0] for i in comports() if (i.vid == 0x0451 and i.pid == 0xBEF3)]
