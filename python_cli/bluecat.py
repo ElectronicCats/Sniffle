@@ -232,8 +232,12 @@ def cmd_audit(args):
         addr_type = "Public" if getattr(args, "public", False) else "Random"
         device = Device(mac=args.mac, addr_type=addr_type)
         print("[*] auditing %s (%s) ..." % (args.mac, addr_type), file=sys.stderr)
+        # Single-target audit: be as persistent as `connect`. A slow/flaky
+        # peripheral often needs several tries, and the address type here is only
+        # a guess from --public, so let the last attempt flip it.
         findings = aud.audit_device(hw, device,
-                                    aggressive=getattr(args, "aggressive", False))
+                                    aggressive=getattr(args, "aggressive", False),
+                                    attempts=4, try_both_addr_types=True)
         block = aud.render_audit(device, findings, color=use_color)
         output_text = block + "\n"
         results = [(device, findings)]

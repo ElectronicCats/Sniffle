@@ -281,7 +281,8 @@ def _recover_link(hw):
 
 
 def audit_device(hw, device: Device, aggressive: bool = False,
-                 hard_timeout: int = 15, attempts: int = 2) -> list[Finding]:
+                 hard_timeout: int = 15, attempts: int = 2,
+                 try_both_addr_types: bool = False) -> list[Finding]:
     """Connect to *device*, run the vulnerability checks, return sorted findings.
 
     Hardened for bulk auditing:
@@ -291,6 +292,12 @@ def audit_device(hw, device: Device, aggressive: bool = False,
         the serial link (reset + flush + reopen) — so a known-vulnerable device
         is never missed just because an earlier flaky device desynced the link.
     The watchdog needs the main thread (SIGALRM); off-thread it is skipped.
+
+    Connection budget matches the interactive `connect` path (bluecat.py's
+    _connect_or_die): an 8s per-attempt window (a flaky/slow peripheral often
+    needs more than 5s to answer a CONNECT_IND). With try_both_addr_types the
+    final attempt flips the address type, so a single-target audit whose
+    Public/Random guess was wrong still connects.
     """
     findings: list[Finding] = []
     findings.extend(check_trackability(device))   # check C — no connection needed
@@ -316,15 +323,24 @@ def audit_device(hw, device: Device, aggressive: bool = False,
     conn_findings = None
     last_err = "no connection established"
 
+    primary_random = (device.addr_type != "Public")
+
     for attempt in range(attempts):
         link = None
+        # Use the advertised/guessed address type on all but the last attempt;
+        # on the final attempt fall back to the other type (only when asked, so
+        # bulk sweeps with a known-correct type don't burn a wrong-type attempt).
+        if try_both_addr_types and attempt == attempts - 1:
+            is_random = not primary_random
+        else:
+            is_random = primary_random
         if use_alarm:
             signal.alarm(int(hard_timeout))
         try:
             link = connect_session(
                 hw, mac_to_list(device.mac),
-                is_random=(device.addr_type != "Public"),
-                posture=Posture(), timeout=5)
+                is_random=is_random,
+                posture=Posture(), timeout=8)
             gcli = GattClient(link)
             services = gcli.discover_all(read_values=True)
 
