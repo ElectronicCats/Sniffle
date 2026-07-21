@@ -325,3 +325,43 @@ def test_fuzzer_no_reconnect_stops_on_crash():
     summary = fz.run("values", handle=0x0001, seed=b'\x01')
     # Should have stopped early
     assert summary["crashes"] >= 1 or summary["tested"] >= 0  # did not raise
+
+
+# ── summary counters (crashes / anomalies) ──────────────────────────────────────
+
+def test_fuzzer_counts_att_errors_as_anomalies():
+    """Every write returning an ATT error (link alive) must be reported as an
+    anomaly in the run summary, not silently dropped."""
+    class GcliErr:
+        def write(self, h, v, response=False):
+            raise ATTError(0x12, h, 0x03)  # Write Not Permitted
+
+    class LinkAlive:
+        alive = True
+
+    log = fuzzer.FuzzLogger(None)
+    fz = fuzzer.Fuzzer(LinkAlive(), GcliErr(), log)
+    summary = fz.run("values", handle=0x0010, seed=b'\x01')
+    assert summary["crashes"] == 0
+    assert summary["tested"] > 0
+    assert summary["anomalies"] == summary["tested"]
+
+
+def test_fuzzer_values_counts_single_crash_once():
+    """One link death during values fuzzing must count as exactly one crash,
+    not be double-recorded."""
+    class GcliCount:
+        def __init__(self): self.n = 0
+        def write(self, h, v, response=False): self.n += 1
+
+    class LinkDies:
+        def __init__(self, g): self.g = g
+        @property
+        def alive(self): return self.g.n < 2
+
+    g = GcliCount()
+    log = fuzzer.FuzzLogger(None)
+    fz = fuzzer.Fuzzer(LinkDies(g), g, log)
+    summary = fz.run("values", handle=0x0010, seed=b'\x01')
+    assert summary["crashes"] == 1
+    assert len(log.crashes) == 1

@@ -46,6 +46,7 @@ class FuzzLogger:
         self.f = open(path, 'a') if path else None
         self.count = 0
         self.crashes = []
+        self.anomalies = 0
 
     def record(self, kind, sent, result, crashed=False):
         self.count += 1
@@ -58,6 +59,8 @@ class FuzzLogger:
         }
         if crashed:
             self.crashes.append(rec)
+        elif isinstance(result, str) and "ATTError" in result:
+            self.anomalies += 1
         if self.f:
             self.f.write(json.dumps(rec) + "\n")
             self.f.flush()
@@ -88,13 +91,6 @@ def fuzz_values(gcli, handle, seed, logger, is_alive):
 
         logger.record("value", m, result)
         if not is_alive():
-            # Overwrite the last record as a crash record
-            logger.crashes.append(logger.crashes[-1] if logger.crashes else
-                                  {"n": logger.count, "kind": "value",
-                                   "sent": m.hex(), "result": result,
-                                   "crashed": True})
-            # Replace the last non-crash record with a crash record
-            last = logger.count - 1  # 0-based index (count is 1-based)
             logger.record("value", m, result + " [crash detected]", crashed=True)
             return
 
@@ -234,6 +230,7 @@ class Fuzzer:
         """
         before = self.logger.count
         before_crashes = len(self.logger.crashes)
+        before_anomalies = self.logger.anomalies
 
         if mode == "values":
             handle = kw.get("handle", 0x0001)
@@ -262,17 +259,8 @@ class Fuzzer:
 
         tested = self.logger.count - before
         new_crashes = len(self.logger.crashes) - before_crashes
-        # Anomalies: ATTError responses (not crashes, but unexpected)
-        anomalies = sum(
-            1 for r in self._records_since(before)
-            if "ATTError" in str(r.get("result", "")) and not r.get("crashed")
-        )
+        anomalies = self.logger.anomalies - before_anomalies
         return {"tested": tested, "crashes": new_crashes, "anomalies": anomalies}
-
-    def _records_since(self, before_count):
-        """Return logger records after a given count (approximate — uses crashes list)."""
-        # We don't store all records in-memory; return crashes only for anomaly counting
-        return self.logger.crashes[-(self.logger.count - before_count):]
 
     def _run_with_resume(self, strategy_fn):
         """Run strategy_fn; if a crash is detected and reconnect is set,
