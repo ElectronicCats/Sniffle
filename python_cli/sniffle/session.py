@@ -35,7 +35,7 @@ def _wait_state(hw, target, timeout, sink=None):
 def connect_session(hw, peer_mac, is_random=True, posture=None, timeout=10, **kw):
     """Initiate a BLE connection to peer_mac and return a live CentralLink.
 
-    peer_mac: 6-byte list, little-endian (as produced by parse_mac in hijack_test.py,
+    peer_mac: 6-byte list, little-endian (as produced by parse_mac in hijack_poc.py,
               e.g. [0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA] for AA:BB:CC:DD:EE:FF).
     is_random: True if the peer uses a random address (default), False for public.
     posture:   optional Posture instance; one will be created if not supplied.

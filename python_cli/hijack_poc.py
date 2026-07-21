@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-# Hijack test script for COMMAND_HIJACK (0x28)
-# Tests connection takeover against an unencrypted BLE peripheral (e.g. LED strip)
+# Hijack proof-of-concept (PoC) script for COMMAND_HIJACK (0x28)
+# Demonstrates connection takeover against an unencrypted BLE peripheral (e.g. LED strip)
 #
 # Usage:
-#   python3 hijack_test.py -m AA:BB:CC:DD:EE:FF
-#   python3 hijack_test.py -m AA:BB:CC:DD:EE:FF -s /dev/ttyACM0 --handle 0x0003
+#   python3 hijack_poc.py -m AA:BB:CC:DD:EE:FF
+#   python3 hijack_poc.py -m AA:BB:CC:DD:EE:FF -s /dev/ttyACM0 --handle 0x0003
 
 import argparse, sys, signal, threading
 from time import time, sleep
