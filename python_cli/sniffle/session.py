@@ -1,9 +1,9 @@
 """
-session.py — three entry points that return a live CentralLink:
+session.py - three entry points that return a live CentralLink:
 
-  connect_session(hw, peer_mac, ...)      – initiate a connection as central
-  hijack_session(hw, target_mac, ...)     – sniff then hijack a specific MAC
-  follow_session(hw, ...)                 – hijack the first connection seen (no MAC filter)
+  connect_session(hw, peer_mac, ...)      - initiate a connection as central
+  hijack_session(hw, target_mac, ...)     - sniff then hijack a specific MAC
+  follow_session(hw, ...)                 - hijack the first connection seen (no MAC filter)
 """
 
 from time import time
@@ -24,7 +24,7 @@ def _wait_state(hw, target, timeout, sink=None):
         try:
             msg = hw.recv_and_decode()
         except SerialTimeoutException:
-            continue  # no data this interval — re-check the deadline
+            continue  # no data this interval - re-check the deadline
         if sink:
             sink(msg)
         if isinstance(msg, StateMessage) and msg.new_state == target:
@@ -52,7 +52,7 @@ def connect_session(hw, peer_mac, is_random=True, posture=None, timeout=10, **kw
         raise RuntimeError("failed to reach CENTRAL (connect_session timed out)")
     # Set the decoder's connection AA only AFTER reaching CENTRAL. During the
     # INITIATING phase the sniffer hears advertisements on ch >= 37, and the
-    # decoder resets cur_aa back to the advertising AA on those — so an earlier
+    # decoder resets cur_aa back to the advertising AA on those - so an earlier
     # assignment gets clobbered and every connection data PDU (incl. our ATT
     # responses) is mis-decoded as an advert, making att_request time out.
     # Flush first so any advert still buffered from INITIATING is consumed
@@ -67,7 +67,7 @@ def hijack_session(hw, target_mac, advchan=37, stabilize_events=20,
     """Sniff for a connection to target_mac, wait for timing to stabilise,
     then fire cmd_hijack_live() and return a live CentralLink.
 
-    target_mac: 6-byte list, little-endian — the peripheral's MAC.
+    target_mac: 6-byte list, little-endian - the peripheral's MAC.
     advchan:    primary advertising channel to listen on (37/38/39).
     stabilize_events: number of C->P connection events to observe before hijacking.
     tx_power:   TX power in dBm to set before firing the hijack (-20..+5).
@@ -99,7 +99,7 @@ def hijack_session(hw, target_mac, advchan=37, stabilize_events=20,
 
     if posture.encrypted:
         raise RuntimeError(
-            "hijack_session: target connection is encrypted — cannot hijack")
+            "hijack_session: target connection is encrypted - cannot hijack")
 
     # Phase 3: boost TX power to outgun the original central, then hijack.
     hw.cmd_tx_power(tx_power)
@@ -112,7 +112,7 @@ def hijack_session(hw, target_mac, advchan=37, stabilize_events=20,
 
 
 def follow_session(hw, advchan=37, **kw):
-    """Hijack the first BLE connection seen on advchan — no MAC filter.
+    """Hijack the first BLE connection seen on advchan - no MAC filter.
 
     Internally calls hijack_session with target_mac=None.  Because setup_sniffer
     rejects hop3=True when no MAC is given, hop3 is forced to False here.
@@ -122,7 +122,7 @@ def follow_session(hw, advchan=37, **kw):
     tx_power = kw.pop('tx_power', 5)
 
     # No MAC filter: cmd_mac() is called with no argument (clears any filter).
-    # hop3 must be False — setup_sniffer raises UsageError if hop3=True and
+    # hop3 must be False - setup_sniffer raises UsageError if hop3=True and
     # targ_mac is None.
     hw.setup_sniffer(
         mode=SnifferMode.CONN_FOLLOW,
@@ -142,7 +142,7 @@ def follow_session(hw, advchan=37, **kw):
 
     if posture.encrypted:
         raise RuntimeError(
-            "follow_session: connection is encrypted — cannot hijack")
+            "follow_session: connection is encrypted - cannot hijack")
 
     hw.cmd_tx_power(tx_power)
     hw.cmd_hijack_live()
@@ -177,7 +177,7 @@ def _stabilize(hw, n, posture):
         try:
             msg = hw.recv_and_decode()
         except SerialTimeoutException:
-            continue  # no data this interval — re-check the deadline
+            continue  # no data this interval - re-check the deadline
         if msg is None:
             continue
         if isinstance(msg, PacketMessage):

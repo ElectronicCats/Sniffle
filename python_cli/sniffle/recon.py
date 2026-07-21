@@ -1,12 +1,12 @@
 """
-recon.py — BLE passive scan + optional active posture classification.
+recon.py - BLE passive scan + optional active posture classification.
 
 Public API
 ----------
 Device          dataclass representing one observed BLE advertiser
 scan()          run an active scan, return list[Device]
 probe()         connect to one Device and classify its security posture
-mac_to_list()   convert "AA:BB:CC:DD:EE:FF" → little-endian 6-byte list
+mac_to_list()   convert "AA:BB:CC:DD:EE:FF" -> little-endian 6-byte list
 parse_adv_data()  extract (name, service_uuids) from raw AD bytes
 render_scan_table()  pretty-print a sorted table of Device objects
 """
@@ -97,8 +97,8 @@ def _name_and_services(records):
 def _vendor_label(records) -> str:
     """Vendor / device-type label from Manufacturer Specific Data.
 
-    Apple Continuity → "Apple <message type(s)>" (e.g. "Apple Find My"); Microsoft
-    CDP → "Microsoft <device type>"; any other company → its assigned-numbers
+    Apple Continuity -> "Apple <message type(s)>" (e.g. "Apple Find My"); Microsoft
+    CDP -> "Microsoft <device type>"; any other company -> its assigned-numbers
     name, or "0x%04X" if unknown. "" when there is no MSD. The Apple/MS subclasses
     are checked before the generic record since they derive from it.
     """
@@ -144,7 +144,7 @@ def _is_connectable(dpkt) -> bool:
 
     Connectable: ADV_IND, ADV_DIRECT_IND, and extended adverts whose AdvMode is
     "Connectable" (==1). Non-connectable beacons (ADV_NONCONN_IND / ADV_SCAN_IND)
-    and bare scan responses are False — initiating to them only ever times out.
+    and bare scan responses are False - initiating to them only ever times out.
     """
     if isinstance(dpkt, (AdvIndMessage, AdvDirectIndMessage)):
         return True
@@ -167,7 +167,7 @@ def _ingest_into(dpkt, seen: dict, best_rssi: dict) -> None:
         adv_a, tx_add = dpkt.AdvA, dpkt.TxAdd
     else:
         return
-    if not any(adv_a):     # malformed advert with an all-zero address — drop it
+    if not any(adv_a):     # malformed advert with an all-zero address - drop it
         return
     pkt_connectable = _is_connectable(dpkt)
     mac_str = str_mac(adv_a)
@@ -237,7 +237,7 @@ def scan(hw, advchan=None, duration: float = 10.0) -> List[Device]:
     If *advchan* is None (default), sweep all three primary advertising channels
     37/38/39, scanning each for the FULL *duration* (so devices that only
     advertise on 38 or 39 are still found, with no loss of dwell time on any one
-    channel — total wall time is 3*duration). If a specific channel is given,
+    channel - total wall time is 3*duration). If a specific channel is given,
     scan only that one for *duration*. One Device per unique MAC, merged across
     channels; strongest RSSI wins; latest name/services retained.
 
@@ -263,7 +263,7 @@ def scan_and_audit(hw, advchan=None, duration: float = 5.0, aggressive: bool = F
     that channel immediately (fresh address), before moving on.
 
     Every newly discovered advertiser is passed to audit_device. Non-connectable
-    advertisers (beacons) are reported as such without a connection attempt — only
+    advertisers (beacons) are reported as such without a connection attempt - only
     connectable devices are actually connected to and GATT-enumerated. If
     *include_private* is False, only Public/Static addresses are considered
     (RPA/NRPA skipped).
@@ -302,10 +302,10 @@ def scan_and_audit(hw, advchan=None, duration: float = 5.0, aggressive: bool = F
 def probe(hw, device: Device, timeout: float = 4.0) -> str:
     """Actively connect to *device* and classify its security posture.
 
-    Attempts GattClient(link).read(0x0003) — the GAP Device Name attribute.
-    - Success              → posture from p.verdict() or "OPEN"
-    - ATTError code 0x05 or 0x0F → note it in posture → "ENCRYPTED_*"
-    - LinkLost / TimeoutError / RuntimeError → "UNKNOWN"
+    Attempts GattClient(link).read(0x0003) - the GAP Device Name attribute.
+    - Success              -> posture from p.verdict() or "OPEN"
+    - ATTError code 0x05 or 0x0F -> note it in posture -> "ENCRYPTED_*"
+    - LinkLost / TimeoutError / RuntimeError -> "UNKNOWN"
 
     Always tears down the link and resets the hw before returning.
     """
@@ -319,12 +319,12 @@ def probe(hw, device: Device, timeout: float = 4.0) -> str:
         gc = GattClient(link)
         try:
             gc.read(0x0003)      # GAP Device Name handle
-            # Successful plain read → open (no encryption needed)
+            # Successful plain read -> open (no encryption needed)
             p.saw_plaintext_att = True
         except ATTError as e:
             if e.code in (0x05, 0x0F):
                 p.note_att_error(e.code)
-            # else: some other ATT error — not conclusive, fall through
+            # else: some other ATT error - not conclusive, fall through
         verdict = p.verdict()
         return verdict if verdict != "UNKNOWN" else "OPEN"
     except (LinkLost, TimeoutError, RuntimeError):
@@ -355,7 +355,7 @@ _DIM = "\033[2m"
 
 def _row_color(text: str, connectable: bool, color: bool) -> str:
     """Bold a connectable device (it's attack surface); dim a non-connectable
-    beacon — so connectable vs non-connectable is easy to spot at a glance."""
+    beacon - so connectable vs non-connectable is easy to spot at a glance."""
     if not color:
         return text
     return (_BOLD if connectable else _DIM) + text + _RESET
@@ -364,10 +364,10 @@ def _row_color(text: str, connectable: bool, color: bool) -> str:
 def render_scan_table(devices: List[Device], color: bool = True) -> str:
     """Return a formatted table string of scanned devices.
 
-    Columns: MAC · Name · Vendor · RSSI · AddrType · Conn · #Svcs
+    Columns: MAC | Name | Vendor | RSSI | AddrType | Conn | #Svcs
     Name is the advertised device name (often empty for privacy beacons); Vendor
     is the manufacturer/type label from Manufacturer Specific Data (e.g. "Apple
-    Find My") — they are separate columns. Rows are sorted connectable-first, then
+    Find My") - they are separate columns. Rows are sorted connectable-first, then
     by strongest RSSI; connectable rows are bold and non-connectable beacons dim.
     """
     # connectable-first (False sorts before True), then strongest RSSI first

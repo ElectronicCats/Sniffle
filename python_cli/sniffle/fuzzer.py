@@ -1,5 +1,5 @@
 """
-sniffle/fuzzer.py — multi-layer BLE fuzzer with crash/anomaly detection and
+sniffle/fuzzer.py - multi-layer BLE fuzzer with crash/anomaly detection and
 crash-resume for the bluecat toolchain.
 
 Targets:
@@ -19,7 +19,7 @@ from . import att
 from .central_link import ATTError, LinkLost
 
 
-# ── Mutation engine ────────────────────────────────────────────────────────────
+# -- Mutation engine ------------------------------------------------------------
 
 def value_mutations(seed=b''):
     """Deterministic ordered, de-duplicated set of mutated payloads from a seed."""
@@ -38,7 +38,7 @@ def value_mutations(seed=b''):
     return out
 
 
-# ── Logger ─────────────────────────────────────────────────────────────────────
+# -- Logger ---------------------------------------------------------------------
 
 class FuzzLogger:
     def __init__(self, path=None):
@@ -71,12 +71,12 @@ class FuzzLogger:
             self.f.close()
 
 
-# ── Strategy: ATT characteristic value fuzzing ────────────────────────────────
+# -- Strategy: ATT characteristic value fuzzing --------------------------------
 
 def fuzz_values(gcli, handle, seed, logger, is_alive):
     """Fuzz a single characteristic handle with value mutations.
 
-    For each mutation: write → record ok/ATTError → check is_alive().
+    For each mutation: write -> record ok/ATTError -> check is_alive().
     Stops and records crash if the link dies or a transport exception is raised.
     """
     for m in value_mutations(seed):
@@ -95,7 +95,7 @@ def fuzz_values(gcli, handle, seed, logger, is_alive):
             return
 
 
-# ── Strategy: GATT handle sweep ───────────────────────────────────────────────
+# -- Strategy: GATT handle sweep -----------------------------------------------
 
 def fuzz_handle_sweep(gcli, payload, start, end, logger, is_alive):
     """Try writing payload to every handle in [start, end].
@@ -120,7 +120,7 @@ def fuzz_handle_sweep(gcli, payload, start, end, logger, is_alive):
             return
 
 
-# ── Strategy: Raw ATT opcode fuzzing ──────────────────────────────────────────
+# -- Strategy: Raw ATT opcode fuzzing ------------------------------------------
 
 # Fixed set of malformed ATT PDUs to send
 _ATT_MALFORMED_PDUS = [
@@ -162,7 +162,7 @@ def fuzz_att_opcodes(link, logger, is_alive):
             return
 
 
-# ── Strategy: LL control PDU fuzzing ─────────────────────────────────────────
+# -- Strategy: LL control PDU fuzzing -----------------------------------------
 
 # Fixed set of malformed LL control PDUs
 _LL_MALFORMED_PDUS = [
@@ -196,7 +196,7 @@ def fuzz_ll_control(link, logger, is_alive):
             return
 
 
-# ── Fuzzer orchestrator ────────────────────────────────────────────────────────
+# -- Fuzzer orchestrator --------------------------------------------------------
 
 class Fuzzer:
     """Orchestrates multi-layer BLE fuzzing with optional crash-resume.
@@ -275,7 +275,7 @@ class Fuzzer:
                 self.link = new_link
                 if new_gcli is not None:
                     self.gcli = new_gcli
-                # Continue with fresh link — run the strategy once more
+                # Continue with fresh link - run the strategy once more
                 strategy_fn()
             except Exception:
                 pass  # reconnect failed; stop gracefully

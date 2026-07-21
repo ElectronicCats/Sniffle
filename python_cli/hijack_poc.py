@@ -52,7 +52,7 @@ def wait_for_stable_timing(n_events=20, timeout=30):
 
     WinOffsetMeasurement is only generated for encrypted connections so it
     never arrives for this unencrypted strip. Instead we count received
-    packets — once the firmware has seen N events its nextHopTime is stable
+    packets - once the firmware has seen N events its nextHopTime is stable
     and the hijack will fire at the right moment.
     """
     count = 0
@@ -177,7 +177,7 @@ def interactive_loop(handle):
                 print("Invalid color format. Use 'color RRGGBB' (e.g. color FF0000)")
                 continue
         else:
-            # raw hex passthrough — send exactly what was typed
+            # raw hex passthrough - send exactly what was typed
             try:
                 payload = bytes.fromhex(cmd.replace(' ', ''))
                 if len(payload) == 0:
@@ -282,11 +282,11 @@ def main():
                 break
 
     if link_alive:
-        print("[+] Link confirmed alive — peripheral is responding.")
+        print("[+] Link confirmed alive - peripheral is responding.")
     else:
         print("[!] No response from peripheral in 2s.")
         print("[!] Connection may have timed out during hijack.")
-        print("[!] Reconnect phone to LED and run again — WinOffset needs to sync first.")
+        print("[!] Reconnect phone to LED and run again - WinOffset needs to sync first.")
 
     # --- Phase 4: interactive control ---
     interactive_loop(args.handle)

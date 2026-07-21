@@ -70,7 +70,7 @@ def test_write_cmd_basic():
 def test_write_cmd_direction_c_to_p():
     pdu = bytes.fromhex("52" "0100" "ab")
     line, _ = format_att_op(pdu, is_p_to_c=False)
-    assert "C→P" in line   # C→P
+    assert "C->P" in line   # C->P
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +127,7 @@ def test_handle_value_notify():
 def test_handle_value_notify_direction():
     pdu = bytes.fromhex("1b" "0100" "01")
     line, _ = format_att_op(pdu, is_p_to_c=True)
-    assert "P→C" in line   # P→C
+    assert "P->C" in line   # P->C
 
 
 # ---------------------------------------------------------------------------
@@ -246,7 +246,7 @@ def test_read_req_overrides_pending_handle():
 
 
 # ---------------------------------------------------------------------------
-# UUID rendering in DISCOVER lines — hex (not decimal), with names when known
+# UUID rendering in DISCOVER lines - hex (not decimal), with names when known
 # ---------------------------------------------------------------------------
 
 def test_fmt_uuid_known_16bit():
@@ -263,7 +263,7 @@ def test_fmt_uuid_128bit():
     assert _fmt_uuid(u) == "0x" + u
 
 def test_discover_services_rsp_renders_hex_not_decimal():
-    # 0x1800 @1-7, 0x1801 @8-b — must NOT print decimal 6144/6145
+    # 0x1800 @1-7, 0x1801 @8-b - must NOT print decimal 6144/6145
     pdu = bytes.fromhex("110601000700001808000b000118")
     line, _ = format_att_op(pdu, is_p_to_c=True)
     assert "0x1800 (Generic Access)" in line

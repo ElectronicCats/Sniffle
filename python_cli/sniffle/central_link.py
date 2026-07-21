@@ -144,7 +144,7 @@ class CentralLink:
             self._ver_waiting = True
             # Our own LL_VERSION_IND: VersNr=0x0C (BT 5.3), CompId=0x000D (TI, the
             # radio's vendor), SubVersNr=0. The values we send don't affect the
-            # peer's reply — we only care about the CompId it sends back.
+            # peer's reply - we only care about the CompId it sends back.
             self.tx_raw_ll(3, bytes([LL_VERSION_IND, 0x0C, 0x0D, 0x00, 0x00, 0x00]))
             try:
                 return self._ver_resp.get(timeout=timeout)
@@ -156,8 +156,8 @@ class CentralLink:
     def terminate(self, reason=0x13, wait_s=3.0, poll=0.05):
         """Drop the connection by sending LL_TERMINATE_IND (opcode 0x02 + reason)
         as the master. The firmware ends the connection once it actually
-        transmits the PDU — reactToTransmitted() -> handleConnFinished() ->
-        STATE:STATIC — which flips self.alive via the pump. Wait up to *wait_s*
+        transmits the PDU - reactToTransmitted() -> handleConnFinished() ->
+        STATE:STATIC - which flips self.alive via the pump. Wait up to *wait_s*
         for that; if the peer never acks the terminate in time, force a firmware
         reset so the next connect starts from a clean STATIC state instead of a
         stuck CENTRAL.

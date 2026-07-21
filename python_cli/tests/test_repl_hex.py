@@ -1,4 +1,4 @@
-"""Unit tests for bluecat._hexbytes — pasting sniffed bytes into the REPL."""
+"""Unit tests for bluecat._hexbytes - pasting sniffed bytes into the REPL."""
 import bluecat
 
 def test_space_separated_hex():

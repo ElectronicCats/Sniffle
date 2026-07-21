@@ -3,7 +3,7 @@ from sniffle import fuzzer
 from sniffle.central_link import ATTError, LinkLost
 
 
-# ── value_mutations ────────────────────────────────────────────────────────────
+# -- value_mutations ------------------------------------------------------------
 
 def test_value_mutations_deterministic_and_deduped():
     m1 = fuzzer.value_mutations(b'\x01\x02')
@@ -33,7 +33,7 @@ def test_value_mutations_seed_extras():
     assert seed + b'\x00' * 8 in m
 
 
-# ── FuzzLogger ─────────────────────────────────────────────────────────────────
+# -- FuzzLogger -----------------------------------------------------------------
 
 def test_fuzz_logger_writes_jsonl_and_tracks_crashes():
     path = tempfile.mktemp(suffix=".jsonl")
@@ -66,7 +66,7 @@ def test_fuzz_logger_count_increments():
     assert log.count == 2
 
 
-# ── fuzz_values ────────────────────────────────────────────────────────────────
+# -- fuzz_values ----------------------------------------------------------------
 
 def test_fuzz_values_detects_crash_with_fake():
     class FakeGcli:
@@ -117,7 +117,7 @@ def test_fuzz_values_records_ok():
 
 def _get_all_records(log):
     """Helper: return all records from a logger (crashes + non-crashes)."""
-    return []  # Not used for assertion — we check log.count and log.crashes
+    return []  # Not used for assertion - we check log.count and log.crashes
 
 
 def value_mutations_helper(seed):
@@ -144,7 +144,7 @@ def test_fuzz_values_timeout_treated_as_crash():
     assert log.crashes
 
 
-# ── fuzz_handle_sweep ──────────────────────────────────────────────────────────
+# -- fuzz_handle_sweep ----------------------------------------------------------
 
 def test_fuzz_handle_sweep_iterates_range():
     class FakeGcli:
@@ -173,7 +173,7 @@ def test_fuzz_handle_sweep_stops_on_crash():
     assert log.crashes
 
 
-# ── fuzz_att_opcodes ───────────────────────────────────────────────────────────
+# -- fuzz_att_opcodes -----------------------------------------------------------
 
 def test_fuzz_att_opcodes_records_each_pdu():
     class FakeLink:
@@ -207,7 +207,7 @@ def test_fuzz_att_opcodes_stops_on_link_death():
     assert len(link.sent) <= 2
 
 
-# ── fuzz_ll_control ────────────────────────────────────────────────────────────
+# -- fuzz_ll_control ------------------------------------------------------------
 
 def test_fuzz_ll_control_sends_pdus():
     class FakeLink:
@@ -224,7 +224,7 @@ def test_fuzz_ll_control_sends_pdus():
     assert all(llid == 3 for llid, _ in link.sent)
 
 
-# ── Fuzzer orchestrator ────────────────────────────────────────────────────────
+# -- Fuzzer orchestrator --------------------------------------------------------
 
 def test_fuzzer_run_values_mode():
     class FakeGcli:
@@ -327,7 +327,7 @@ def test_fuzzer_no_reconnect_stops_on_crash():
     assert summary["crashes"] >= 1 or summary["tested"] >= 0  # did not raise
 
 
-# ── summary counters (crashes / anomalies) ──────────────────────────────────────
+# -- summary counters (crashes / anomalies) --------------------------------------
 
 def test_fuzzer_counts_att_errors_as_anomalies():
     """Every write returning an ATT error (link alive) must be reported as an

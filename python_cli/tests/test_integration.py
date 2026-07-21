@@ -1,6 +1,6 @@
 """
-test_integration.py — hardware-free end-to-end integration test for the
-connect → enumerate → read/write path.
+test_integration.py - hardware-free end-to-end integration test for the
+connect -> enumerate -> read/write path.
 
 SimHW simulates the Sniffle firmware + a BLE peripheral with a small GATT DB.
 FakeGattDB is a minimal ATT server (ELK-BLEDOM-like layout).
@@ -26,15 +26,15 @@ from conftest import make_att_packet
 
 
 # ---------------------------------------------------------------------------
-# FakeGattDB — minimal ATT server
+# FakeGattDB - minimal ATT server
 # ---------------------------------------------------------------------------
 #
 # Database layout:
-#   Service 0x1800 (Generic Access)  handles 0x0001–0x0005
+#   Service 0x1800 (Generic Access)  handles 0x0001-0x0005
 #     decl 0x0002  char 0x2A00  props=R(0x02)  value_handle=0x0003  value=b"SIMDEV"
-#     (two extra handles 0x0004–0x0005 to fill the service end)
+#     (two extra handles 0x0004-0x0005 to fill the service end)
 #
-#   Service 0xFFF0 (Vendor)          handles 0x0006–0x000f
+#   Service 0xFFF0 (Vendor)          handles 0x0006-0x000f
 #     decl 0x0007  char 0xFFF3  props=W|Wnr(0x0C)  value_handle=0x0008
 #       CCCD 0x2902 @ 0x0009
 #     decl 0x000a  char 0xFFF4  props=N(0x10)  value_handle=0x000b
@@ -89,7 +89,7 @@ class FakeGattDB:
         self._values = {h: v for h, (u, v) in self.ATTRS.items()}
 
     def respond(self, att_req):
-        """Dispatch an ATT request PDU (bytes) → response bytes or None."""
+        """Dispatch an ATT request PDU (bytes) -> response bytes or None."""
         if not att_req:
             return None
         op = att_req[0]
@@ -110,7 +110,7 @@ class FakeGattDB:
             return self._error(op, 0x0000, 0x06)  # Request Not Supported
 
     # ------------------------------------------------------------------
-    # ATT_READ_BY_GROUP_REQ (0x10) → 0x11 or ATT_ERROR
+    # ATT_READ_BY_GROUP_REQ (0x10) -> 0x11 or ATT_ERROR
     # Spec says only type 0x2800 (primary service) is mandatory.
     # ------------------------------------------------------------------
     def _read_by_group(self, req):
@@ -128,7 +128,7 @@ class FakeGattDB:
         return bytes([att.ATT_READ_BY_GROUP_RSP, each]) + data
 
     # ------------------------------------------------------------------
-    # ATT_READ_BY_TYPE_REQ (0x08) → 0x09 or ATT_ERROR
+    # ATT_READ_BY_TYPE_REQ (0x08) -> 0x09 or ATT_ERROR
     # Handles type 0x2803 (Characteristic Declaration).
     # ------------------------------------------------------------------
     def _read_by_type(self, req):
@@ -146,7 +146,7 @@ class FakeGattDB:
         return bytes([att.ATT_READ_BY_TYPE_RSP, each]) + data
 
     # ------------------------------------------------------------------
-    # ATT_FIND_INFO_REQ (0x04) → 0x05 or ATT_ERROR
+    # ATT_FIND_INFO_REQ (0x04) -> 0x05 or ATT_ERROR
     # Returns handle+uuid16 pairs for all attributes in range.
     # ------------------------------------------------------------------
     def _find_info(self, req):
@@ -165,7 +165,7 @@ class FakeGattDB:
         return bytes([att.ATT_FIND_INFO_RSP, 0x01]) + data  # format 1 = uuid16
 
     # ------------------------------------------------------------------
-    # ATT_READ_REQ (0x0A) → 0x0B or ATT_ERROR
+    # ATT_READ_REQ (0x0A) -> 0x0B or ATT_ERROR
     # ------------------------------------------------------------------
     def _read(self, req):
         _, handle = struct.unpack('<BH', req[:3])
@@ -178,7 +178,7 @@ class FakeGattDB:
         return bytes([att.ATT_READ_RSP]) + val
 
     # ------------------------------------------------------------------
-    # ATT_WRITE_REQ (0x12) → 0x13 or ATT_ERROR
+    # ATT_WRITE_REQ (0x12) -> 0x13 or ATT_ERROR
     # ------------------------------------------------------------------
     def _write_req(self, req):
         _, handle = struct.unpack('<BH', req[:3])
@@ -200,7 +200,7 @@ class FakeGattDB:
 
 
 # ---------------------------------------------------------------------------
-# SimHW — simulated Sniffle hardware + peripheral
+# SimHW - simulated Sniffle hardware + peripheral
 # ---------------------------------------------------------------------------
 
 class SimHW:
@@ -258,7 +258,7 @@ class SimHW:
 # ---------------------------------------------------------------------------
 
 def make_session():
-    """Return (hw, link) — a SimHW + live CentralLink."""
+    """Return (hw, link) - a SimHW + live CentralLink."""
     db = FakeGattDB()
     hw = SimHW(db)
     link = connect_session(hw, [0] * 6, is_random=False, timeout=5)

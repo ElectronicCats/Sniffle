@@ -1,5 +1,5 @@
 """
-Unit tests for sniffle.recon — pure-logic helpers only.
+Unit tests for sniffle.recon - pure-logic helpers only.
 Hardware-coupled functions (scan, probe) are not tested here.
 """
 
@@ -25,7 +25,7 @@ _APPLE_FIND_MY_AD = bytes([0x07, 0xFF, 0x4C, 0x00, 0x12, 0x02, 0x00, 0x00])
 
 
 def test_mac_to_list_roundtrip():
-    """mac_to_list converts 'AA:BB:CC:DD:EE:FF' → little-endian 6-byte list."""
+    """mac_to_list converts 'AA:BB:CC:DD:EE:FF' -> little-endian 6-byte list."""
     assert recon.mac_to_list("AA:BB:CC:DD:EE:FF") == [0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA]
 
 
@@ -43,7 +43,7 @@ def test_render_scan_table_sorted_and_contains_fields():
                      services=[0xFFF0]),
     ]
     out = recon.render_scan_table(devs, color=False)
-    # Both connectable (default) → strongest RSSI (-40) must appear before weaker (-80)
+    # Both connectable (default) -> strongest RSSI (-40) must appear before weaker (-80)
     assert out.index("AA:BB:CC:DD:EE:FF") < out.index("11:22:33:44:55:66")
     assert "LEDX" in out and "-40" in out
 
@@ -124,8 +124,8 @@ def test_ingest_connectable_is_sticky_across_packets():
     """Seeing a non-connectable SCAN_RSP first, then an ADV_IND for the same MAC,
     leaves the device marked connectable (the flag never downgrades)."""
     seen, best = {}, {}
-    recon._ingest_into(_adv(4), seen, best)   # SCAN_RSP — not connectable by itself
-    recon._ingest_into(_adv(0), seen, best)   # ADV_IND — same MAC, connectable
+    recon._ingest_into(_adv(4), seen, best)   # SCAN_RSP - not connectable by itself
+    recon._ingest_into(_adv(0), seen, best)   # ADV_IND - same MAC, connectable
     assert len(seen) == 1
     dev = next(iter(seen.values()))
     assert dev.connectable is True
@@ -136,7 +136,7 @@ def test_ingest_connectable_is_sticky_across_packets():
 # ---------------------------------------------------------------------------
 
 def test_vendor_apple_find_my():
-    """Apple Continuity MSD resolves to an 'Apple …' label with the message type."""
+    """Apple Continuity MSD resolves to an 'Apple ...' label with the message type."""
     label = recon.vendor_from_adv_data(_APPLE_FIND_MY_AD)
     assert label.startswith("Apple")
     assert "Find My" in label
@@ -145,7 +145,7 @@ def test_vendor_apple_find_my():
 def test_vendor_generic_company_resolves_name():
     """A non-Apple/MS company id resolves via the company_identifiers table."""
     from sniffle.advdata.constants import company_identifiers
-    cid = 0x0075  # Samsung — generic ManufacturerSpecificDataRecord path
+    cid = 0x0075  # Samsung - generic ManufacturerSpecificDataRecord path
     data = bytes([0x05, 0xFF, cid & 0xFF, cid >> 8, 0xAA, 0xBB])
     assert recon.vendor_from_adv_data(data) == company_identifiers.get(cid, "0x%04X" % cid)
 
@@ -188,7 +188,7 @@ def test_render_table_shows_connectable_flag():
 
 
 def test_render_table_has_separate_name_and_vendor_columns():
-    """Name and Vendor are distinct columns — both values appear on the row."""
+    """Name and Vendor are distinct columns - both values appear on the row."""
     devs = [recon.Device("AA:BB:CC:DD:EE:FF", name="MyGadget",
                          vendor="Apple Find My", rssi=-40, connectable=True)]
     out = recon.render_scan_table(devs, color=False)

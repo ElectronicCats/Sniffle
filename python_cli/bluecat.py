@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-# bluecat — BLE recon/hijack/GATT tool
+# bluecat - BLE recon/hijack/GATT tool
 # Uses Sniffle hardware (CatSniffer) to scan, audit, connect to, hijack, or
 # fuzz a BLE peripheral, enumerate GATT services, and drop into an interactive
 # REPL.
 #
 # Subcommands:
-#   bluecat scan              — passive/active BLE scan
-#   bluecat audit  [MAC]      — vulnerability assessment
-#   bluecat connect MAC       — connect as central → GATT enum → REPL
-#   bluecat hijack [MAC]      — take over a live connection → enum → REPL
-#   bluecat fuzz   [MAC]      — multi-layer BLE fuzzer
+#   bluecat scan              - passive/active BLE scan
+#   bluecat audit  [MAC]      - vulnerability assessment
+#   bluecat connect MAC       - connect as central -> GATT enum -> REPL
+#   bluecat hijack [MAC]      - take over a live connection -> enum -> REPL
+#   bluecat fuzz   [MAC]      - multi-layer BLE fuzzer
 
 import argparse, sys, signal, json, binascii, logging, os, traceback
 from time import sleep
@@ -42,7 +42,7 @@ def _hexbytes(tokens):
 
 def _quiet_logger():
     """Logger at ERROR level so SniffleHW's per-packet 'Skipping decode due to
-    exception' warnings (benign — a stray/short packet that fails the adv
+    exception' warnings (benign - a stray/short packet that fails the adv
     decoder) don't flood stderr with tracebacks. Real errors still show."""
     lg = logging.getLogger("bluecat.hw")
     lg.setLevel(logging.ERROR)
@@ -119,7 +119,7 @@ def repl(link, name, mac, posture):
         import readline  # noqa: F401
     except ImportError:
         pass
-    print("\nbluecat REPL — 'help' for commands.\n")
+    print("\nbluecat REPL - 'help' for commands.\n")
     while link.alive:
         while not link.notifications.empty():
             h, v = link.notifications.get()
@@ -164,7 +164,7 @@ def repl(link, name, mac, posture):
                 print("  sending LL_TERMINATE_IND (reason 0x%02X); closing link..." % reason)
                 clean = link.terminate(reason)   # blocks until firmware -> STATIC, or forces a reset
                 print("  link closed by peer ack." if clean
-                      else "  peer didn't ack in time — forced firmware reset.")
+                      else "  peer didn't ack in time - forced firmware reset.")
                 print("  peer should re-advertise; reconnect:  bluecat connect %s" % mac)
                 # link.alive is now False, so the REPL loop exits cleanly below.
             elif op == "posture":
@@ -256,7 +256,7 @@ def cmd_audit(args):
         blocks = []
 
         def _on_discover(d):
-            print("[~] %s (%s) %s — auditing..." %
+            print("[~] %s (%s) %s - auditing..." %
                   (d.mac, d.addr_type, d.name or ""), file=sys.stderr)
 
         def _on_result(d, f):
@@ -321,7 +321,7 @@ def cmd_audit(args):
 def _connect_or_die(hw, mac_str, public, posture, timeout=8):
     """Connect to mac_str, trying BOTH address types so --public isn't required
     (the scan already knows public vs random, but a direct MAC might not). Returns
-    a live CentralLink, or prints a clean message and exits — never a traceback."""
+    a live CentralLink, or prints a clean message and exits - never a traceback."""
     macl = parse_mac(mac_str)
     for is_random in (not public, public):   # the user's hint first, then the other
         try:
@@ -333,7 +333,7 @@ def _connect_or_die(hw, mac_str, public, posture, timeout=8):
                 sleep(0.3)
             except Exception:
                 pass
-    print("[!] Could not connect to %s — tried both public and random address types."
+    print("[!] Could not connect to %s - tried both public and random address types."
           % mac_str, file=sys.stderr)
     print("[!] Is it advertising and not already connected to a phone/app?",
           file=sys.stderr)
@@ -357,7 +357,7 @@ def _access(hw, args, mode):
             link = ses.hijack_session(hw, parse_mac(args.mac), advchan=advchan,
                                       posture=posture)
             name, mac = "?", args.mac
-        else:  # connect — _connect_or_die handles its own clean exit on failure
+        else:  # connect - _connect_or_die handles its own clean exit on failure
             print("[*] connecting to %s ..." % args.mac, file=sys.stderr)
             link = _connect_or_die(hw, args.mac, args.public, posture)
             posture.saw_plaintext_att = True
@@ -373,10 +373,10 @@ def _access(hw, args, mode):
     # Wire up pcap BEFORE do_enum so all GATT traffic is captured.
     link.pcap_writer = pcap
 
-    print("[+] in CENTRAL — posture:", posture.verdict())
+    print("[+] in CENTRAL - posture:", posture.verdict())
 
     # Controller identity: LL_VERSION_IND carries the Bluetooth SIG Company
-    # Identifier of the peer's BLE controller (silicon/stack vendor — not always
+    # Identifier of the peer's BLE controller (silicon/stack vendor - not always
     # the product brand). This is the SIG company id even when the device
     # advertises no Manufacturer Specific Data.
     try:
@@ -390,7 +390,7 @@ def _access(hw, args, mode):
         try:
             do_enum(link, name, mac, posture)
         except TimeoutError:
-            print("[!] reached CENTRAL but peer is not responding to ATT — "
+            print("[!] reached CENTRAL but peer is not responding to ATT - "
                   "is the target still connected to another device, or not actually connectable?")
         except (ATTError, LinkLost) as e:
             print("[!] enum incomplete:", e)
@@ -471,7 +471,7 @@ def cmd_fuzz(args):
         reconnect_fn = None
         print("[!] note: crash-resume unavailable in follow mode", file=sys.stderr)
 
-    print("[+] in CENTRAL — posture:", posture.verdict(), file=sys.stderr)
+    print("[+] in CENTRAL - posture:", posture.verdict(), file=sys.stderr)
 
     gcli = gatt.GattClient(link)
 
@@ -558,7 +558,7 @@ def _add_common(p):
 def main():
     top = argparse.ArgumentParser(
         prog="bluecat",
-        description="bluecat — BLE recon/hijack/GATT tool (CatSniffer)",
+        description="bluecat - BLE recon/hijack/GATT tool (CatSniffer)",
         epilog="Run 'bluecat <command> -h' for per-command help.",
     )
 
@@ -569,7 +569,7 @@ def main():
     sp_scan = subs.add_parser(
         "scan",
         help="Discover nearby BLE devices (passive scan)",
-        description="Passive BLE scan — lists all advertising devices seen on the "
+        description="Passive BLE scan - lists all advertising devices seen on the "
                     "selected channel(s) during the dwell window.",
     )
     _add_common(sp_scan)
@@ -609,7 +609,7 @@ def main():
                           help="Enable aggressive checks (reserved; accepted but unused in "
                                "this release)")
     sp_audit.add_argument("--skip-private", action="store_true",
-                          help="Skip RPA/NRPA (private/rotating) addresses — "
+                          help="Skip RPA/NRPA (private/rotating) addresses - "
                                "only Public and Static addresses are audited")
     sp_audit.add_argument("--no-color", action="store_true",
                           help="Disable ANSI color in output")
@@ -621,7 +621,7 @@ def main():
     # --------------------------------------------------------------- connect
     sp_connect = subs.add_parser(
         "connect",
-        help="Connect as central → GATT enumeration → interactive REPL",
+        help="Connect as central -> GATT enumeration -> interactive REPL",
         description="Initiate an outbound BLE connection to MAC, enumerate GATT "
                     "services, and drop into an interactive REPL.",
     )
@@ -638,7 +638,7 @@ def main():
     # --------------------------------------------------------------- hijack
     sp_hijack = subs.add_parser(
         "hijack",
-        help="Take over a live connection → GATT enum → REPL; no MAC = follow first seen",
+        help="Take over a live connection -> GATT enum -> REPL; no MAC = follow first seen",
         description="Sniff then hijack an existing BLE connection.  With a MAC, "
                     "waits for and hijacks a connection to that specific peripheral. "
                     "Without a MAC, follows (takes over) the first connection seen "
@@ -700,7 +700,7 @@ def main():
         help="Passively follow a live BLE connection and print ATT operations",
         description="Passively sniff an existing BLE connection to MAC. "
                     "Prints every ATT read, write, notification, and indication "
-                    "in real time — handle + value.  No connection is initiated; "
+                    "in real time - handle + value.  No connection is initiated; "
                     "purely passive.  Useful as a recon step before hijacking "
                     "to identify the control-point handle and command bytes.",
     )

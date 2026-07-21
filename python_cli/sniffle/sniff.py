@@ -1,5 +1,5 @@
 """
-sniff.py — passive ATT sniffer: follow a live BLE connection and print every
+sniff.py - passive ATT sniffer: follow a live BLE connection and print every
 ATT read/write/notify/indicate operation seen on the air.
 
 This is purely passive (no hijack, no transmit).  It mirrors the CONN_FOLLOW
@@ -17,7 +17,7 @@ from . import att, gatt
 
 
 # ---------------------------------------------------------------------------
-# Pure formatter — no I/O, easy to unit-test
+# Pure formatter - no I/O, easy to unit-test
 # ---------------------------------------------------------------------------
 
 def _printable(b: bytes) -> str:
@@ -47,7 +47,7 @@ def format_att_op(att_pdu: bytes, is_p_to_c: bool, read_handle=None):
     Returns (line: str, new_read_handle: int | None) where *new_read_handle*
     is the handle to remember for correlating the next Read Response (or None).
 
-    *is_p_to_c*: True if the direction is Peripheral→Central.
+    *is_p_to_c*: True if the direction is Peripheral->Central.
     *read_handle*: the handle from the last observed Read Request (may be None).
     """
     if not att_pdu:
@@ -56,8 +56,8 @@ def format_att_op(att_pdu: bytes, is_p_to_c: bool, read_handle=None):
     opcode = att_pdu[0]
     payload = att_pdu[1:]
 
-    c2p = "C→P"   # C→P
-    p2c = "P→C"   # P→C
+    c2p = "C->P"   # C->P
+    p2c = "P->C"   # P->C
     direction = p2c if is_p_to_c else c2p
 
     # ------------------------------------------------------------------ helpers
@@ -175,7 +175,7 @@ def format_att_op(att_pdu: bytes, is_p_to_c: bool, read_handle=None):
 
 
 # ---------------------------------------------------------------------------
-# Hardware follow loop — passive, no transmit
+# Hardware follow loop - passive, no transmit
 # ---------------------------------------------------------------------------
 
 def sniff_connection(hw, target_mac, advchan=37, duration=None, on_op=None,
@@ -193,7 +193,7 @@ def sniff_connection(hw, target_mac, advchan=37, duration=None, on_op=None,
     if on_op is None:
         on_op = print
 
-    # Passive CONN_FOLLOW — exactly like hijack_session phase-1 but we stop here.
+    # Passive CONN_FOLLOW - exactly like hijack_session phase-1 but we stop here.
     hw.setup_sniffer(
         mode=SnifferMode.CONN_FOLLOW,
         chan=advchan,
@@ -224,7 +224,7 @@ def sniff_connection(hw, target_mac, advchan=37, duration=None, on_op=None,
 
             # Surface connection events to the caller
             if isinstance(msg, ConnectIndMessage):
-                on_op("[~] CONNECT_IND detected — following connection")
+                on_op("[~] CONNECT_IND detected - following connection")
 
             # Feed every packet to pcap if requested
             if pcap_writer is not None and isinstance(msg, PacketMessage):
@@ -235,12 +235,12 @@ def sniff_connection(hw, target_mac, advchan=37, duration=None, on_op=None,
 
             # Link-layer control: surface the peer's controller identity. An
             # LL_VERSION_IND carries the Bluetooth SIG Company Identifier of the
-            # BLE controller (silicon/stack vendor) — obtainable here without ever
+            # BLE controller (silicon/stack vendor) - obtainable here without ever
             # connecting ourselves, just by following the connection on the air.
             if isinstance(msg, LlControlMessage) and msg.opcode == LL_VERSION_IND:
                 v = parse_ll_version_ind(msg.body)
                 if v is not None:
-                    side = "P→C" if msg.data_dir == 1 else "C→P"
+                    side = "P->C" if msg.data_dir == 1 else "C->P"
                     on_op("[~] %s controller (LL_VERSION_IND): %s" % (side, v))
                 continue
 

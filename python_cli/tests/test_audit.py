@@ -1,11 +1,11 @@
 """
-test_audit.py — hardware-free unit + integration tests for sniffle/audit.py.
+test_audit.py - hardware-free unit + integration tests for sniffle/audit.py.
 
 Reuses the SimHW + FakeGattDB pattern from test_integration.py.
 Extended FakeGattDB variants cover:
-  • requires_auth — reads return ATT Error 0x05 (Insufficient Authentication)
-  • a writable control char (0xFFF3) — already in base FakeGattDB
-  • a writable 0xFE59 char for DFU check
+  * requires_auth - reads return ATT Error 0x05 (Insufficient Authentication)
+  * a writable control char (0xFFF3) - already in base FakeGattDB
+  * a writable 0xFE59 char for DFU check
 
 All tests run without any physical hardware.
 """
@@ -51,9 +51,9 @@ def make_l2cap_packet(payload, cid, p_to_c=True):
 class FakeGattDB:
     """Base GATT DB identical to test_integration.py:
 
-    Service 0x1800 (Generic Access)  handles 0x0001–0x0005
+    Service 0x1800 (Generic Access)  handles 0x0001-0x0005
       char 0x2A00  props=R(0x02)  value_handle=0x0003  value=b"SIMDEV"
-    Service 0xFFF0 (Vendor)          handles 0x0006–0x000F
+    Service 0xFFF0 (Vendor)          handles 0x0006-0x000F
       char 0xFFF3  props=W|Wnr(0x0C)  value_handle=0x0008
       char 0xFFF4  props=N(0x10)       value_handle=0x000B
     """
@@ -175,7 +175,7 @@ class FakeGattDB:
 class FakeGattDBWithDFU(FakeGattDB):
     """Extended DB that adds a writable 0xFE59 (Nordic Secure DFU) characteristic.
 
-    Service 0xFE50  handles 0x0010–0x001F
+    Service 0xFE50  handles 0x0010-0x001F
       char 0xFE59  props=W(0x08)  value_handle=0x0012  (DFU control point)
     """
     SERVICES = FakeGattDB.SERVICES + [(0x0010, 0x001F, 0xFE50)]
@@ -191,16 +191,16 @@ class FakeGattDBWithDFU(FakeGattDB):
 
 
 # ---------------------------------------------------------------------------
-# SimHW — simulated Sniffle hardware (mirrors test_integration.py)
+# SimHW - simulated Sniffle hardware (mirrors test_integration.py)
 # ---------------------------------------------------------------------------
 
 class SimHW:
     """Minimal Sniffle hardware simulator backed by a FakeGattDB.
 
     Extended for pass 2:
-      smp_authreq  — AuthReq byte to include in a Pairing Response when a
+      smp_authreq  - AuthReq byte to include in a Pairing Response when a
                      Pairing Request arrives on CID 0x0006 (None = no reply).
-      fragile      — when True, the sim drops the link (sends a non-CENTRAL
+      fragile      - when True, the sim drops the link (sends a non-CENTRAL
                      StateMessage) the first time a malformed/unknown ATT opcode
                      or an LL control PDU (llid==3) is received.
     """
@@ -239,7 +239,7 @@ class SimHW:
     def cmd_transmit(self, llid, pdu, event=0):
         self.sent.append((llid, bytes(pdu)))
 
-        # LL control PDU (LLID=3) — fragile sim drops the link
+        # LL control PDU (LLID=3) - fragile sim drops the link
         if llid == 3:
             if self.fragile:
                 self._drop_link()
@@ -257,7 +257,7 @@ class SimHW:
         payload = pdu_bytes[4:4 + l2cap_len]
 
         if cid == att.SMP_CID:
-            # SMP PDU — check if it's a Pairing Request
+            # SMP PDU - check if it's a Pairing Request
             if payload and payload[0] == SMP_PAIRING_REQ and self.smp_authreq is not None:
                 # Build Pairing Response: code(0x02), IO_cap, OOB, AuthReq, MaxKeySize, IKD, RKD
                 smp_rsp = bytes([SMP_PAIRING_RSP, 0x03, 0x00, self.smp_authreq, 0x10, 0x00, 0x00])
@@ -304,11 +304,11 @@ def _make_device(mac="AA:BB:CC:DD:EE:FF", name="SIMDEV",
 
 
 # ---------------------------------------------------------------------------
-# Tests — check_trackability (Check C)
+# Tests - check_trackability (Check C)
 # ---------------------------------------------------------------------------
 
 def test_check_trackability_public():
-    """Public address → LOW 'trackable' finding."""
+    """Public address -> LOW 'trackable' finding."""
     device = _make_device(addr_type="Public")
     findings = check_trackability(device)
     assert len(findings) == 1
@@ -319,7 +319,7 @@ def test_check_trackability_public():
 
 
 def test_check_trackability_static():
-    """Static random address → LOW 'trackable' finding."""
+    """Static random address -> LOW 'trackable' finding."""
     device = _make_device(addr_type="Static")
     findings = check_trackability(device)
     assert len(findings) == 1
@@ -328,29 +328,29 @@ def test_check_trackability_static():
 
 
 def test_check_trackability_rpa():
-    """RPA → no finding (rotates → not trackable)."""
+    """RPA -> no finding (rotates -> not trackable)."""
     device = _make_device(addr_type="RPA")
     assert check_trackability(device) == []
 
 
 def test_check_trackability_nrpa():
-    """NRPA → no finding."""
+    """NRPA -> no finding."""
     device = _make_device(addr_type="NRPA")
     assert check_trackability(device) == []
 
 
 def test_check_trackability_random():
-    """Generic 'Random' → no finding (treated as non-persistent)."""
+    """Generic 'Random' -> no finding (treated as non-persistent)."""
     device = _make_device(addr_type="Random")
     assert check_trackability(device) == []
 
 
 # ---------------------------------------------------------------------------
-# Tests — check_sensitive_chars (Check D)
+# Tests - check_sensitive_chars (Check D)
 # ---------------------------------------------------------------------------
 
 def test_check_sensitive_chars_dfu_uuid():
-    """A writable 0xFE59 char → HIGH 'dfu-writable' finding."""
+    """A writable 0xFE59 char -> HIGH 'dfu-writable' finding."""
     db = FakeGattDBWithDFU()
     hw = SimHW(db)
     link = connect_session(hw, [0] * 6, is_random=False, timeout=5)
@@ -367,7 +367,7 @@ def test_check_sensitive_chars_dfu_uuid():
 
 
 def test_check_sensitive_chars_name_hint():
-    """A device named 'My DFU Device' with a writable char → HIGH 'dfu-writable'."""
+    """A device named 'My DFU Device' with a writable char -> HIGH 'dfu-writable'."""
     db = FakeGattDB()   # has writable 0xFFF3
     hw = SimHW(db)
     link = connect_session(hw, [0] * 6, is_random=False, timeout=5)
@@ -384,7 +384,7 @@ def test_check_sensitive_chars_name_hint():
 
 
 def test_check_sensitive_chars_no_hit():
-    """Ordinary writable char with no DFU name/UUID → no dfu-writable finding."""
+    """Ordinary writable char with no DFU name/UUID -> no dfu-writable finding."""
     db = FakeGattDB()
     hw = SimHW(db)
     link = connect_session(hw, [0] * 6, is_random=False, timeout=5)
@@ -399,11 +399,11 @@ def test_check_sensitive_chars_no_hit():
 
 
 # ---------------------------------------------------------------------------
-# Tests — audit_device integration (via SimHW)
+# Tests - audit_device integration (via SimHW)
 # ---------------------------------------------------------------------------
 
 def test_audit_open_device_flags_high():
-    """Open DB (writable char, reads succeed) → HIGH no-encryption + HIGH open-control."""
+    """Open DB (writable char, reads succeed) -> HIGH no-encryption + HIGH open-control."""
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db)
     device = _make_device()
@@ -419,7 +419,7 @@ def test_audit_open_device_flags_high():
 
 
 def test_audit_encrypted_device_no_open_finding():
-    """DB with requires_auth=True → no HIGH no-encryption/open-control; gets INFO encrypted."""
+    """DB with requires_auth=True -> no HIGH no-encryption/open-control; gets INFO encrypted."""
     db = FakeGattDB(requires_auth=True)
     hw = SimHW(db)
     device = _make_device()
@@ -439,7 +439,7 @@ def test_audit_encrypted_device_no_open_finding():
 
 
 def test_audit_includes_trackability():
-    """A Public device → trackability finding is included in audit_device results."""
+    """A Public device -> trackability finding is included in audit_device results."""
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db)
     device = _make_device(addr_type="Public")
@@ -451,7 +451,7 @@ def test_audit_includes_trackability():
 
 
 def test_audit_dfu_device():
-    """DB with writable 0xFE59 char → HIGH dfu-writable."""
+    """DB with writable 0xFE59 char -> HIGH dfu-writable."""
     db = FakeGattDBWithDFU(requires_auth=False)
     hw = SimHW(db)
     device = _make_device()
@@ -463,7 +463,7 @@ def test_audit_dfu_device():
 
 
 # ---------------------------------------------------------------------------
-# Tests — render_audit
+# Tests - render_audit
 # ---------------------------------------------------------------------------
 
 def test_render_audit_verdict_vulnerable():
@@ -511,11 +511,11 @@ def test_render_audit_shows_mac_and_name():
 
 
 # ---------------------------------------------------------------------------
-# Tests — findings sorted by severity
+# Tests - findings sorted by severity
 # ---------------------------------------------------------------------------
 
 def test_audit_findings_sorted():
-    """audit_device returns findings sorted HIGH → MEDIUM → LOW → INFO."""
+    """audit_device returns findings sorted HIGH -> MEDIUM -> LOW -> INFO."""
     from sniffle.audit import _SEV_ORDER as _SO
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db)
@@ -528,11 +528,11 @@ def test_audit_findings_sorted():
 
 
 # ---------------------------------------------------------------------------
-# Tests — check_pairing (Check B) via SimHW
+# Tests - check_pairing (Check B) via SimHW
 # ---------------------------------------------------------------------------
 
 def test_check_pairing_legacy():
-    """Peripheral responds with AuthReq lacking SC bit → HIGH 'legacy-pairing'."""
+    """Peripheral responds with AuthReq lacking SC bit -> HIGH 'legacy-pairing'."""
     # AuthReq = 0x04 (MITM only, no SC)
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db, smp_authreq=AUTHREQ_MITM)   # SC not set
@@ -548,7 +548,7 @@ def test_check_pairing_legacy():
 
 
 def test_check_pairing_justworks():
-    """Peripheral AuthReq has SC but not MITM → MEDIUM 'just-works'."""
+    """Peripheral AuthReq has SC but not MITM -> MEDIUM 'just-works'."""
     # AuthReq = 0x08 (SC only, no MITM)
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db, smp_authreq=AUTHREQ_SC)   # SC set, MITM not set
@@ -566,7 +566,7 @@ def test_check_pairing_justworks():
 
 
 def test_check_pairing_secure():
-    """Peripheral AuthReq has SC+MITM → INFO 'pairing-ok', no HIGH/MEDIUM."""
+    """Peripheral AuthReq has SC+MITM -> INFO 'pairing-ok', no HIGH/MEDIUM."""
     # AuthReq = 0x0C (SC | MITM)
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db, smp_authreq=AUTHREQ_SC | AUTHREQ_MITM)
@@ -584,11 +584,11 @@ def test_check_pairing_secure():
 
 
 # ---------------------------------------------------------------------------
-# Tests — check_crash (Check E) via SimHW with fragile flag
+# Tests - check_crash (Check E) via SimHW with fragile flag
 # ---------------------------------------------------------------------------
 
 def test_check_crash_detects_drop():
-    """Aggressive audit on a fragile sim → HIGH 'crash' finding."""
+    """Aggressive audit on a fragile sim -> HIGH 'crash' finding."""
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db, fragile=True)
     link = connect_session(hw, [0] * 6, is_random=False, timeout=5)
@@ -604,7 +604,7 @@ def test_check_crash_detects_drop():
 
 
 def test_check_crash_no_finding_robust():
-    """check_crash on a robust (non-fragile) sim → no crash finding."""
+    """check_crash on a robust (non-fragile) sim -> no crash finding."""
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db, fragile=False)
     link = connect_session(hw, [0] * 6, is_random=False, timeout=5)
@@ -622,13 +622,13 @@ def test_check_crash_no_finding_robust():
 
 
 # ---------------------------------------------------------------------------
-# Tests — full audit_device with pairing check included
+# Tests - full audit_device with pairing check included
 # ---------------------------------------------------------------------------
 
 def test_audit_device_includes_pairing():
     """Full audit_device on an open+legacy sim returns both open-control HIGH
     and legacy-pairing HIGH findings."""
-    # smp_authreq=0x00 → no SC, no MITM → both legacy-pairing HIGH and just-works MEDIUM
+    # smp_authreq=0x00 -> no SC, no MITM -> both legacy-pairing HIGH and just-works MEDIUM
     db = FakeGattDB(requires_auth=False)
     hw = SimHW(db, smp_authreq=0x00)
     device = _make_device()
@@ -647,7 +647,7 @@ def test_audit_device_findings_sorted_with_pairing():
     """audit_device with pairing findings still returns results sorted by severity."""
     from sniffle.audit import _SEV_ORDER as _SO
     db = FakeGattDB(requires_auth=False)
-    hw = SimHW(db, smp_authreq=AUTHREQ_SC)   # SC only → MEDIUM just-works
+    hw = SimHW(db, smp_authreq=AUTHREQ_SC)   # SC only -> MEDIUM just-works
     device = _make_device(addr_type="Public")  # adds LOW trackable
 
     findings = audit_device(hw, device)
@@ -677,7 +677,7 @@ def test_audit_device_non_connectable_does_not_connect(monkeypatch):
 
 def test_audit_device_non_connectable_static_still_trackable(monkeypatch):
     """A non-connectable advertiser with a persistent (Static) address is still
-    flagged as trackable — the passive check C runs without a connection."""
+    flagged as trackable - the passive check C runs without a connection."""
     monkeypatch.setattr(
         "sniffle.audit.connect_session",
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not connect")))

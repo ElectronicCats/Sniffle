@@ -1,9 +1,9 @@
 """
-ll_version.py — decode the LL_VERSION_IND link-layer control PDU.
+ll_version.py - decode the LL_VERSION_IND link-layer control PDU.
 
 LL_VERSION_IND (opcode 0x0C) is exchanged once per connection and carries the
 Bluetooth SIG Company Identifier of the device's *controller* (the BLE silicon /
-stack vendor — e.g. Nordic, TI, Cypress — which is not always the product brand).
+stack vendor - e.g. Nordic, TI, Cypress - which is not always the product brand).
 This is the way to get a SIG company id from a device that advertises no
 Manufacturer Specific Data: connect (or sniff its connection) and read the CompId.
 
@@ -11,9 +11,9 @@ PDU layout (full LL PDU body, i.e. including the 2-byte LL header):
     body[0]   LL header (LLID=3 for control)
     body[1]   length
     body[2]   opcode (0x0C)
-    body[3]   VersNr     — Bluetooth Core spec version
-    body[4:6] CompId     — SIG Company Identifier (little-endian)
-    body[6:8] SubVersNr  — implementation subversion (little-endian)
+    body[3]   VersNr     - Bluetooth Core spec version
+    body[4:6] CompId     - SIG Company Identifier (little-endian)
+    body[6:8] SubVersNr  - implementation subversion (little-endian)
 """
 
 from struct import unpack

@@ -1,12 +1,12 @@
 """
-audit.py — BLE vulnerability auditor framework (pass 1 of 2).
+audit.py - BLE vulnerability auditor framework (pass 1 of 2).
 
 Checks implemented (non-destructive, hardware-free testable):
-  A  check_open_control   — GATT readable/writable with no auth/encryption
-  C  check_trackability   — persistent address (Public / Static RPA)
-  D  check_sensitive_chars — firmware-update / OTA characteristics exposed
+  A  check_open_control   - GATT readable/writable with no auth/encryption
+  C  check_trackability   - persistent address (Public / Static RPA)
+  D  check_sensitive_chars - firmware-update / OTA characteristics exposed
 
-Checks B (pairing downgrade) and E (crash/DoS) are pass 2 — extension
+Checks B (pairing downgrade) and E (crash/DoS) are pass 2 - extension
 points are marked with # PASS2 comments below.
 """
 
@@ -55,13 +55,13 @@ DFU_NAME_HINTS = ("dfu", "ota", "firmware", "upgrade")
 
 
 # ---------------------------------------------------------------------------
-# Check C — address trackability
+# Check C - address trackability
 # ---------------------------------------------------------------------------
 
 def check_trackability(device: Device) -> list[Finding]:
     """Return a LOW finding if the device uses a persistent (trackable) address.
 
-    Public and Static Random addresses never rotate → long-term tracking is
+    Public and Static Random addresses never rotate -> long-term tracking is
     possible.  RPA (Resolvable Private) and NRPA (Non-resolvable Private)
     rotate and are therefore not flagged.
     """
@@ -71,21 +71,21 @@ def check_trackability(device: Device) -> list[Finding]:
             severity=LOW,
             check="trackable",
             title="Persistently trackable address (%s)" % addr_type,
-            detail="No RPA rotation — the device can be tracked across time/locations.",
+            detail="No RPA rotation - the device can be tracked across time/locations.",
         )]
     return []
 
 
 # ---------------------------------------------------------------------------
-# Check A — open GATT control (no auth / encryption)
+# Check A - open GATT control (no auth / encryption)
 # ---------------------------------------------------------------------------
 
 def check_open_control(gcli, services, read_ok: bool) -> list[Finding]:
     """Evaluate whether GATT is accessible without pairing/encryption.
 
-    gcli     — GattClient (unused directly; reserved for future sub-checks)
-    services — list[Service] from discover_all()
-    read_ok  — True  if at least one char value was read without auth error
+    gcli     - GattClient (unused directly; reserved for future sub-checks)
+    services - list[Service] from discover_all()
+    read_ok  - True  if at least one char value was read without auth error
                 False if every read attempt was refused (auth/enc required)
     """
     findings: list[Finding] = []
@@ -95,7 +95,7 @@ def check_open_control(gcli, services, read_ok: bool) -> list[Finding]:
             severity=HIGH,
             check="no-encryption",
             title="GATT readable without pairing/encryption",
-            detail="Connected and read attribute values with no pairing — "
+            detail="Connected and read attribute values with no pairing - "
                    "traffic is plaintext and eavesdroppable.",
         ))
 
@@ -112,11 +112,11 @@ def check_open_control(gcli, services, read_ok: bool) -> list[Finding]:
                 severity=HIGH,
                 check="open-control",
                 title="Writable characteristics with no auth",
-                detail="Handles %s are writable without encryption — "
+                detail="Handles %s are writable without encryption - "
                        "the device can be controlled by anyone." % handles_str,
             ))
     else:
-        # Reads were refused with an auth/enc error → device is protected
+        # Reads were refused with an auth/enc error -> device is protected
         findings.append(Finding(
             severity=INFO,
             check="encrypted",
@@ -128,17 +128,17 @@ def check_open_control(gcli, services, read_ok: bool) -> list[Finding]:
 
 
 # ---------------------------------------------------------------------------
-# Check D — sensitive / firmware-update characteristics
+# Check D - sensitive / firmware-update characteristics
 # ---------------------------------------------------------------------------
 
 def check_sensitive_chars(services, device_name: str = "") -> list[Finding]:
     """Flag writable characteristics that expose firmware-update (DFU/OTA) paths.
 
     Flags a HIGH finding when:
-    • A writable characteristic has a UUID in DFU_UUIDS (e.g. 0xFE59); OR
-    • The device name contains a DFU hint word AND has any writable characteristic.
+    * A writable characteristic has a UUID in DFU_UUIDS (e.g. 0xFE59); OR
+    * The device name contains a DFU hint word AND has any writable characteristic.
 
-    Only writable characteristics are flagged — read-only DFU status handles
+    Only writable characteristics are flagged - read-only DFU status handles
     are not actionable by an attacker.
     """
     findings: list[Finding] = []
@@ -202,7 +202,7 @@ def check_pairing(link) -> list:
     except Exception:
         return []
     if not rsp:
-        return []   # no SMP reply — inconclusive
+        return []   # no SMP reply - inconclusive
     code = rsp[0]
     if code == SMP_PAIRING_FAILED:
         return [Finding(INFO, "pairing-rejected", "Peripheral rejected pairing",
@@ -213,12 +213,12 @@ def check_pairing(link) -> list:
         if not (authreq & AUTHREQ_SC):
             out.append(Finding(HIGH, "legacy-pairing",
                                "LE Legacy pairing (crackable)",
-                               "No LE Secure Connections — the long-term key can be recovered "
+                               "No LE Secure Connections - the long-term key can be recovered "
                                "(e.g. crackle) and traffic decrypted."))
         if not (authreq & AUTHREQ_MITM):
             out.append(Finding(MEDIUM, "just-works",
                                "Just Works pairing (no MITM protection)",
-                               "No authentication — an active attacker can MITM/eavesdrop the pairing."))
+                               "No authentication - an active attacker can MITM/eavesdrop the pairing."))
         if not out:
             out.append(Finding(INFO, "pairing-ok", "LE Secure Connections with MITM", ""))
         return out
@@ -226,12 +226,12 @@ def check_pairing(link) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Check E — crash / DoS via malformed PDUs (aggressive only)
+# Check E - crash / DoS via malformed PDUs (aggressive only)
 # ---------------------------------------------------------------------------
 
 def check_crash(link, gcli) -> list:
     """Send malformed ATT/LL PDUs and report if the device crashes/drops the link.
-    DESTRUCTIVE — only called when aggressive=True."""
+    DESTRUCTIVE - only called when aggressive=True."""
     from . import fuzzer
     log = fuzzer.FuzzLogger(None)
     is_alive = lambda: link.alive
@@ -259,7 +259,7 @@ class _AuditTimeout(Exception):
 
 def _recover_link(hw):
     """Clear a wedged/desynced serial link so it can't poison the next attempt:
-    reset the firmware, flush both serial buffers, and reopen the port — the
+    reset the firmware, flush both serial buffers, and reopen the port - the
     reopen clears a USB-CDC-level desync (the 'readiness but no data' state) that
     a flush alone does not."""
     try:
@@ -289,7 +289,7 @@ def audit_device(hw, device: Device, aggressive: bool = False,
       * a hard SIGALRM watchdog (hard_timeout) abandons a hung device so it
         cannot stall the whole sweep;
       * a failed connect is retried up to *attempts* times after fully recovering
-        the serial link (reset + flush + reopen) — so a known-vulnerable device
+        the serial link (reset + flush + reopen) - so a known-vulnerable device
         is never missed just because an earlier flaky device desynced the link.
     The watchdog needs the main thread (SIGALRM); off-thread it is skipped.
 
@@ -300,7 +300,7 @@ def audit_device(hw, device: Device, aggressive: bool = False,
     Public/Random guess was wrong still connects.
     """
     findings: list[Finding] = []
-    findings.extend(check_trackability(device))   # check C — no connection needed
+    findings.extend(check_trackability(device))   # check C - no connection needed
 
     # Non-connectable advertisers (beacons: ADV_NONCONN_IND / ADV_SCAN_IND) never
     # answer a CONNECT_IND, so every connect attempt just burns the watchdog and
@@ -308,7 +308,7 @@ def audit_device(hw, device: Device, aggressive: bool = False,
     # entirely and say so plainly. Passive checks (trackability) have already run.
     if not getattr(device, "connectable", True):
         findings.append(Finding(INFO, "non-connectable",
-            "Non-connectable advertiser — GATT not assessable",
+            "Non-connectable advertiser - GATT not assessable",
             "Device advertises but does not accept connections (beacon); "
             "only passive checks apply."))
         return sorted(findings, key=lambda f: _SEV_ORDER[f.severity])
@@ -366,13 +366,13 @@ def audit_device(hw, device: Device, aggressive: bool = False,
             if aggressive:
                 chk.extend(check_crash(link, gcli))                            # E
             conn_findings = chk
-            break  # success — no retry needed
+            break  # success - no retry needed
         except _AuditTimeout:
             conn_findings = [Finding(INFO, "timeout",
                 "Audit timed out after %ds (device hung the connection)" % hard_timeout, "")]
             break  # a hang will not resolve on retry
         except Exception as e:
-            last_err = str(e)   # transient/connect failure — recover and retry
+            last_err = str(e)   # transient/connect failure - recover and retry
         finally:
             if use_alarm:
                 signal.alarm(0)
@@ -438,15 +438,15 @@ def render_audit(device: Device, findings: list[Finding], color: bool = True) ->
     # Verdict
     sevs = {f.severity for f in findings}
     if HIGH in sevs:
-        verdict = _color("→ VULNERABLE", _RED, color)
+        verdict = _color("-> VULNERABLE", _RED, color)
     elif MEDIUM in sevs:
-        verdict = _color("→ WEAK", _YELLOW, color)
+        verdict = _color("-> WEAK", _YELLOW, color)
     elif sevs - {INFO}:  # LOW present
-        verdict = _color("→ minor/limited", _DIM, color)
+        verdict = _color("-> minor/limited", _DIM, color)
     elif sevs:  # INFO only
-        verdict = "→ no significant findings"
+        verdict = "-> no significant findings"
     else:
-        verdict = "→ no findings"
+        verdict = "-> no findings"
 
     lines.append(verdict)
     return "\n".join(lines)

@@ -1,5 +1,5 @@
 """
-test_scan_audit.py — unit tests for recon.scan_and_audit orchestration.
+test_scan_audit.py - unit tests for recon.scan_and_audit orchestration.
 
 No real hardware is used. Both _scan_channel and audit.audit_device are
 monkeypatched to return canned data so the tests exercise only the

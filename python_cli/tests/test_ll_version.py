@@ -1,5 +1,5 @@
 """
-Unit tests for sniffle.ll_version — parsing the LL_VERSION_IND link-layer
+Unit tests for sniffle.ll_version - parsing the LL_VERSION_IND link-layer
 control PDU and resolving its Bluetooth SIG Company Identifier.
 """
 
@@ -39,7 +39,7 @@ def test_version_name_maps_known_core_versions():
 
 
 def test_parse_returns_none_for_other_opcode():
-    # LL_TERMINATE_IND (0x02) + reason — not a version ind
+    # LL_TERMINATE_IND (0x02) + reason - not a version ind
     body = bytes([0x03, 0x02, 0x02, 0x13])
     assert parse_ll_version_ind(body) is None
 

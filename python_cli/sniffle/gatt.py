@@ -58,9 +58,9 @@ def _ascii(b):
 
 def _uuid_label(uuid):
     """One label per UUID: '0x2A00 Device Name' for known 16-bit UUIDs, just
-    '0xFFF3' for unknown 16-bit, and the full hex for 128-bit — NEVER the hex
+    '0xFFF3' for unknown 16-bit, and the full hex for 128-bit - NEVER the hex
     twice (the old renderer printed uuid_str AND uuid_name, which for unknown
-    UUIDs are identical → '0xFFF3 0xFFF3')."""
+    UUIDs are identical -> '0xFFF3 0xFFF3')."""
     s = uuid_str(uuid)
     n = uuid_name(uuid)
     return s if n == s else "%s %s" % (s, n)
@@ -68,14 +68,14 @@ def _uuid_label(uuid):
 def render_gatt_tree(services, name="", mac="", posture="", color=True):
     c = _C(color)
     nchar = sum(len(s.characteristics) for s in services)
-    lines = ["GATT database  ·  %s (%s)  ·  posture: %s  ·  %d services · %d characteristics"
+    lines = ["GATT database  |  %s (%s)  |  posture: %s  |  %d services | %d characteristics"
              % (mac, name, posture, len(services), nchar), ""]
     for s in services:
         lines.append("%s  %s   handles 0x%04X-0x%04X" % (
-            c('1;36', '●'), c('1;36', _uuid_label(s.uuid)), s.start, s.end))
+            c('1;36', '*'), c('1;36', _uuid_label(s.uuid)), s.start, s.end))
         for i, ch in enumerate(s.characteristics):
             last = (i == len(s.characteristics) - 1) and not ch.descriptors
-            branch = '└─' if last else '├─'
+            branch = '`-' if last else '|-'
             val = ''
             if ch.value is not None:
                 val = '  = %s  "%s"' % (ch.value.hex(' '), _ascii(ch.value))
@@ -84,10 +84,10 @@ def render_gatt_tree(services, name="", mac="", posture="", color=True):
                 c('2', "0x%04X" % ch.value_handle),
                 c('33', format_props(ch.properties)), val))
             for d in ch.descriptors:
-                lines.append("     └─ %s  %s" % (
+                lines.append("     `- %s  %s" % (
                     _uuid_label(d.uuid), c('2', "0x%04X" % d.handle)))
     lines.append("")
-    lines.append("  flags: R read · W write · w write-no-resp · N notify · I indicate · S signed")
+    lines.append("  flags: R read | W write | w write-no-resp | N notify | I indicate | S signed")
     return "\n".join(lines)
 
 
@@ -112,20 +112,20 @@ def render_attack_surface(services, color=True):
         cur = ''
         if ch.value is not None:
             cur = '   (reads: "%s")' % _ascii(ch.value)
-        lines.append("  %s send commands → handle %s  %s  [%s]%s" % (
-            c('1;31', '▶'), c('1;31', "0x%04X" % ch.value_handle),
+        lines.append("  %s send commands -> handle %s  %s  [%s]%s" % (
+            c('1;31', '>'), c('1;31', "0x%04X" % ch.value_handle),
             uuid_str(ch.uuid), kind, cur))
     for ch in listen:
         kind = "notify" if (ch.properties & 0x10) else "indicate"
         cccd = next((d.handle for d in ch.descriptors if d.uuid == 0x2902), None)
         sub = ("sub 0x%04X to receive" % cccd) if cccd else "no CCCD found"
-        lines.append("  %s device replies ← handle %s  %s  [%s]  (%s)" % (
-            c('1;36', '◀'), c('1;36', "0x%04X" % ch.value_handle),
+        lines.append("  %s device replies <- handle %s  %s  [%s]  (%s)" % (
+            c('1;36', '<'), c('1;36', "0x%04X" % ch.value_handle),
             uuid_str(ch.uuid), kind, sub))
     if writable:
         h = writable[0].value_handle
         lines.append("")
-        lines.append(c('2', "  → learn the command bytes with  sniff,  then:  w 0x%04X <bytes>" % h))
+        lines.append(c('2', "  -> learn the command bytes with  sniff,  then:  w 0x%04X <bytes>" % h))
     return "\n".join(lines)
 
 
@@ -143,7 +143,7 @@ class GattClient:
                     break
                 raise
             entries = att.parse_read_by_group_rsp(rsp)
-            if not entries:          # short/corrupt response — stop, don't crash
+            if not entries:          # short/corrupt response - stop, don't crash
                 break
             for s, end, u in entries:
                 services.append(Service(s, end, u))
@@ -163,7 +163,7 @@ class GattClient:
                     break
                 raise
             entries = att.parse_read_by_type_rsp(rsp)
-            if not entries:          # short/corrupt response — stop, don't crash
+            if not entries:          # short/corrupt response - stop, don't crash
                 break
             for decl, props, vh, u in entries:
                 svc.characteristics.append(Characteristic(decl, props, vh, u))
@@ -184,7 +184,7 @@ class GattClient:
                     break
                 raise
             entries = att.parse_find_info_rsp(rsp)
-            if not entries:          # short/corrupt response — stop, don't crash
+            if not entries:          # short/corrupt response - stop, don't crash
                 break
             for h, u in entries:
                 char.descriptors.append(Descriptor(h, u))
